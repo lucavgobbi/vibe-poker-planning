@@ -4,6 +4,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 import { useRoomSocket } from "../hooks/useRoomSocket";
@@ -41,11 +42,13 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
   const { roomId, joinedName } = useAppShellContext();
   const clientId = useMemo(getStoredClientId, []);
   const joinedRoomKeyRef = useRef("");
+  const [selectedVote, setSelectedVote] = useState<VoteValue | null>(null);
+  const enabled = Boolean(roomId && joinedName);
 
   const { connectionState, errorMessage, roomState, throwEvents, sendMessage } = useRoomSocket({
     roomId,
     joinedName,
-    enabled: Boolean(roomId && joinedName),
+    enabled,
     clientId,
   });
 
@@ -71,6 +74,23 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
   const currentUser = roomState.users.find((user) => user.id === clientId);
   const currentVote = currentUser?.vote ?? null;
   const revealed = roomState.revealed;
+
+  useEffect(() => {
+    if (!enabled) {
+      setSelectedVote(null);
+      return;
+    }
+
+    if (currentVote) {
+      setSelectedVote(currentVote);
+      return;
+    }
+
+    const votesCleared = !roomState.revealed && roomState.users.every((user) => !user.hasVoted && !user.vote);
+    if (votesCleared) {
+      setSelectedVote(null);
+    }
+  }, [currentVote, enabled, roomState.revealed, roomState.users]);
   const unanimousVote = useMemo(() => {
     if (!revealed || roomState.users.length === 0) {
       return "";
@@ -120,7 +140,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
       errorMessage,
       roomState,
       throwEvents,
-      currentVote,
+      currentVote: selectedVote,
       revealed,
       unanimousVote,
       averageScore,
@@ -144,6 +164,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        setSelectedVote(value);
         captureAnalytics("UserVoted", {
           vote: value,
           revealed,
@@ -166,6 +187,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        setSelectedVote(null);
         captureAnalytics("VotesReset", {
           votesBeforeReset: roomState.users.filter((user) => user.hasVoted).length,
           wasRevealed: revealed,
@@ -177,13 +199,13 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
       averageScore,
       clientId,
       connectionState,
-      currentVote,
       errorMessage,
       joinedName,
       revealed,
       roomId,
       roomState,
       shareUrl,
+      selectedVote,
       throwEvents,
       unanimousVote,
       sendMessage,
