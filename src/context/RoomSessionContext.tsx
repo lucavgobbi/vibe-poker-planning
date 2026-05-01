@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRoomSocket } from "../hooks/useRoomSocket";
-import { POSTHOG_KEY, posthog } from "../lib/posthog";
+import { capturePostHog } from "../lib/posthog";
 import { getStoredClientId, toVoteNumber } from "../lib/room";
 import type {
   ConnectionState,
@@ -53,7 +53,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!POSTHOG_KEY || !roomId || !joinedName || connectionState !== "connected") {
+    if (!roomId || !joinedName || connectionState !== "connected") {
       return;
     }
 
@@ -63,7 +63,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
     }
 
     joinedRoomKeyRef.current = joinKey;
-    posthog.capture("UserJoined", {
+    capturePostHog("UserJoined", {
       roomId,
       userId: clientId,
       userName: joinedName,
@@ -121,11 +121,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
   const shareUrl = roomId ? `${window.location.origin}/${roomId}` : window.location.origin;
 
   const captureAnalytics = (eventName: string, metadata: Record<string, unknown> = {}) => {
-    if (!POSTHOG_KEY) {
-      return;
-    }
-
-    posthog.capture(eventName, {
+    capturePostHog(eventName, {
       roomId,
       userId: clientId,
       userName: joinedName,

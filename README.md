@@ -52,8 +52,10 @@ Local development works without setting `VITE_WS_BASE_URL` as long as the fronte
 The frontend reads these variables at build time:
 
 - `VITE_WS_BASE_URL`: Required for deployed frontend builds. This should point at the Cloudflare Worker WebSocket base URL, for example `wss://your-worker.your-subdomain.workers.dev`.
-- `VITE_POSTHOG_KEY`: Optional. Enables PostHog analytics.
-- `VITE_POSTHOG_HOST`: Optional. Override the PostHog API host if needed.
+- `POSTHOG_ANALYTICS_API_KEY`: Optional. Enables PostHog analytics.
+- `POSTHOG_ANALYTICS_HOST`: Optional. Override the PostHog API host if needed.
+- `VITE_POSTHOG_KEY`: Optional legacy fallback for PostHog analytics.
+- `VITE_POSTHOG_HOST`: Optional legacy fallback for the PostHog API host.
 
 ## Quality Checks
 
@@ -115,8 +117,8 @@ Builds are configured for Vercel through `vercel.json`.
 Before deploying the frontend, make sure the Vercel project has:
 
 - `VITE_WS_BASE_URL` set to the deployed worker URL
-- `VITE_POSTHOG_KEY` set if analytics should be enabled
-- `VITE_POSTHOG_HOST` set if you use a non-default PostHog host
+- `POSTHOG_ANALYTICS_API_KEY` set if analytics should be enabled
+- `POSTHOG_ANALYTICS_HOST` set if you use a non-default PostHog host
 
 Typical Vercel deployment flow:
 
@@ -143,4 +145,5 @@ stripe projects env --pull
 
 - If the app shows a realtime backend configuration error, set `VITE_WS_BASE_URL` for that environment.
 - If Vercel loads but rooms do not connect, verify the frontend is using the correct `wss://` worker URL.
+- If PostHog shows no events, verify `POSTHOG_ANALYTICS_API_KEY` is present in the frontend build environment. If your PostHog project is not in the US region, also set `POSTHOG_ANALYTICS_HOST` explicitly, for example `https://eu.i.posthog.com`.
 - If provider auth has expired, re-run `stripe projects status` and use `stripe projects link <provider>` if needed.

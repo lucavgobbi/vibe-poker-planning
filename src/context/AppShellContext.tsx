@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { DISPLAY_NAME_KEY, THEME_KEY } from "../lib/constants";
-import { POSTHOG_KEY, initPostHog, posthog } from "../lib/posthog";
+import { identifyPostHog } from "../lib/posthog";
 import { getInitialTheme, getRoomIdFromPath, getStoredClientId } from "../lib/room";
 import type { Theme } from "../lib/types";
 
@@ -42,15 +42,7 @@ export function AppShellProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    initPostHog();
-  }, []);
-
-  useEffect(() => {
-    if (!POSTHOG_KEY) {
-      return;
-    }
-
-    posthog.identify(clientId, {
+    identifyPostHog(clientId, {
       display_name: joinedName || undefined,
     });
   }, [clientId, joinedName]);

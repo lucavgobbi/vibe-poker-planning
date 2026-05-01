@@ -4,6 +4,9 @@
     "cloudflare": {
       "name": "Cloudflare"
     },
+    "posthog": {
+      "name": "PostHog"
+    },
     "vercel": {
       "name": "Vercel"
     }
@@ -18,6 +21,16 @@
       "name": "cloudflare-workers",
       "providerName": "Cloudflare",
       "serviceId": "workers"
+    },
+    "posthog-analytics": {
+      "name": "posthog-analytics",
+      "providerName": "PostHog",
+      "serviceId": "analytics"
+    },
+    "posthog-plan": {
+      "name": "posthog-plan",
+      "providerName": "PostHog",
+      "serviceId": "free"
     },
     "vercel-plan": {
       "name": "vercel-plan",

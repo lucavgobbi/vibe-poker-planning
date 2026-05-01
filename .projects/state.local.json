@@ -8,14 +8,26 @@
     "projectName": "vibe-poker-planning"
   },
   "providers": {
+    "posthog": {
+      "accountRequestId": "facctrq_61UbjN08vPaRtqJAG16T7aYg3jA8otz7aoHwdBFTET7w",
+      "configuration": {
+        "region": "US"
+      },
+      "linkedAt": "2026-05-01T18:03:43.522Z",
+      "providerId": "prvdr_61UGMHNyOleb3A55m5Pg8",
+      "providerName": "PostHog",
+      "redirectUrl": null,
+      "requestedAt": "2026-05-01T18:03:43.522Z",
+      "status": "complete"
+    },
     "vercel": {
-      "accountRequestId": "facctrq_61UbQtre2IiIvOaY916T7aYg3jA8otz7aoHwdBFTENe4",
+      "accountRequestId": "facctrq_61UbgKx5d42segfGA16T7aYg3jA8otz7aoHwdBFTEK12",
       "configuration": {},
-      "linkedAt": "2026-04-30T22:20:27.428Z",
+      "linkedAt": "2026-05-01T14:49:24.998Z",
       "providerId": "prvdr_61ULUAr4zlQgZkvXY5LsG",
       "providerName": "Vercel",
       "redirectUrl": null,
-      "requestedAt": "2026-04-30T22:20:27.428Z",
+      "requestedAt": "2026-05-01T14:49:24.998Z",
       "status": "complete"
     }
   },
@@ -41,6 +53,28 @@
       "providerName": "Cloudflare",
       "resourceId": "fres_61UbQtHlDBldLzKS616T7aYg3jA8otz7aoHwdBFTEMK8",
       "serviceId": "workers"
+    },
+    "posthog-analytics": {
+      "configuration": {},
+      "createdAt": "2026-05-01T18:04:19.591Z",
+      "lastRevealedAt": "2026-05-01T18:04:19.986Z",
+      "lastStatus": "complete",
+      "name": "posthog-analytics",
+      "providerId": "prvdr_61UGMHNyOleb3A55m5Pg8",
+      "providerName": "PostHog",
+      "resourceId": "fres_61UbjNapCCy1jrLbX16T7aYg3jA8otz7aoHwdBFTE4G8",
+      "serviceId": "analytics"
+    },
+    "posthog-plan": {
+      "configuration": {},
+      "createdAt": "2026-05-01T18:04:17.734Z",
+      "lastRevealedAt": "2026-05-01T18:04:18.338Z",
+      "lastStatus": "complete",
+      "name": "posthog-plan",
+      "providerId": "prvdr_61UGMHNyOleb3A55m5Pg8",
+      "providerName": "PostHog",
+      "resourceId": "fres_61UbjNX4IjCnNIACk16T7aYg3jA8otz7aoHwdBFTEDCq",
+      "serviceId": "free"
     },
     "vercel-plan": {
       "configuration": {},
