@@ -1,12 +1,70 @@
 {
   "version": 1,
   "project": {
-    "merchantId": "acct_1RyCbKPaAwotpdL6",
+    "initializedAt": "2026-04-30T22:04:19.678Z",
     "merchantDisplayName": null,
+    "merchantId": "acct_1RyCbKPaAwotpdL6",
     "projectId": "project_61UbQeJbutBeU2Ca016T7aYg3jA8otz7aoHwdBFTEL5M",
-    "projectName": "vibe-poker-planning",
-    "initializedAt": "2026-04-30T22:04:19.678Z"
+    "projectName": "vibe-poker-planning"
   },
-  "providers": {},
-  "resources": {}
+  "providers": {
+    "vercel": {
+      "accountRequestId": "facctrq_61UbQtre2IiIvOaY916T7aYg3jA8otz7aoHwdBFTENe4",
+      "configuration": {},
+      "linkedAt": "2026-04-30T22:20:27.428Z",
+      "providerId": "prvdr_61ULUAr4zlQgZkvXY5LsG",
+      "providerName": "Vercel",
+      "redirectUrl": null,
+      "requestedAt": "2026-04-30T22:20:27.428Z",
+      "status": "complete"
+    }
+  },
+  "resources": {
+    "cloudflare-plan": {
+      "configuration": {},
+      "createdAt": "2026-04-30T22:19:46.979Z",
+      "lastRevealedAt": "2026-04-30T22:19:47.239Z",
+      "lastStatus": "complete",
+      "name": "cloudflare-plan",
+      "providerId": "prvdr_61UQRSWMdrciFdBNs5Ipc",
+      "providerName": "Cloudflare",
+      "resourceId": "fres_61UbQt9eG0NjCSMw416T7aYg3jA8otz7aoHwdBFTETXM",
+      "serviceId": "workers:free"
+    },
+    "cloudflare-workers": {
+      "configuration": {},
+      "createdAt": "2026-04-30T22:19:55.136Z",
+      "lastRevealedAt": "2026-04-30T22:19:55.583Z",
+      "lastStatus": "complete",
+      "name": "cloudflare-workers",
+      "providerId": "prvdr_61UQRSWMdrciFdBNs5Ipc",
+      "providerName": "Cloudflare",
+      "resourceId": "fres_61UbQtHlDBldLzKS616T7aYg3jA8otz7aoHwdBFTEMK8",
+      "serviceId": "workers"
+    },
+    "vercel-plan": {
+      "configuration": {},
+      "createdAt": "2026-04-30T22:20:28.281Z",
+      "lastRevealedAt": "2026-04-30T22:20:28.443Z",
+      "lastStatus": "complete",
+      "name": "vercel-plan",
+      "providerId": "prvdr_61ULUAr4zlQgZkvXY5LsG",
+      "providerName": "Vercel",
+      "resourceId": "fres_61UbQtvob5dUjVVZW16T7aYg3jA8otz7aoHwdBFTERGC",
+      "serviceId": "hobby"
+    },
+    "vercel-project": {
+      "configuration": {
+        "name": "vibe-poker-planning"
+      },
+      "createdAt": "2026-04-30T22:20:29.427Z",
+      "lastRevealedAt": "2026-04-30T23:22:50.114Z",
+      "lastStatus": "complete",
+      "name": "vercel-project",
+      "providerId": "prvdr_61ULUAr4zlQgZkvXY5LsG",
+      "providerName": "Vercel",
+      "resourceId": "fres_61UbQtwU6QquZcEuu16T7aYg3jA8otz7aoHwdBFTE8wC",
+      "serviceId": "project"
+    }
+  }
 }
