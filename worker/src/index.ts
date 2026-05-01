@@ -1,5 +1,154 @@
-const ALLOWED_VOTES = new Set(["0", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89"]);
-const ALLOWED_THROW_EMOJIS = new Set(["🔥", "💥", "🫡", "😂", "🚀", "🍅", "🧠", "👀"]);
+import { DurableObject } from "cloudflare:workers";
+
+type VoteValue = "0" | "1/2" | "1" | "2" | "3" | "5" | "8" | "13" | "21" | "34" | "55" | "89";
+
+type ThrowEmoji =
+  | "🔥"
+  | "💥"
+  | "🫡"
+  | "😂"
+  | "🚀"
+  | "🍅"
+  | "🧠"
+  | "👀"
+  | "🧻"
+  | "🛩️"
+  | "💩"
+  | "🎯"
+  | "⚡"
+  | "🌈"
+  | "⭐"
+  | "🍕"
+  | "🍿"
+  | "🎉"
+  | "🦆"
+  | "🐢"
+  | "🦖"
+  | "🧊"
+  | "🍌"
+  | "🥨"
+  | "🫠"
+  | "🤯"
+  | "🥳"
+  | "👻"
+  | "🧨"
+  | "🎈"
+  | "💫"
+  | "🪩"
+  | "🍩"
+  | "🥔"
+  | "🧷"
+  | "🧲";
+
+type RoomUser = {
+  id: string;
+  name: string;
+  vote: VoteValue | null;
+};
+
+type ClientRecord = {
+  socket: WebSocket;
+  name: string;
+};
+
+type PlanningRoomState = {
+  revealed: boolean;
+  users: Map<string, RoomUser>;
+};
+
+type VoteMessage = {
+  type: "vote";
+  value: VoteValue;
+};
+
+type ThrowMessage = {
+  type: "throw";
+  targetUserId: string;
+  emoji: ThrowEmoji;
+};
+
+type RevealMessage = {
+  type: "reveal";
+};
+
+type ResetMessage = {
+  type: "reset";
+};
+
+type ClientMessage = VoteMessage | ThrowMessage | RevealMessage | ResetMessage;
+
+type ServerErrorPayload = {
+  type: "error";
+  message: string;
+};
+
+type ServerThrowPayload = {
+  type: "throw";
+  id: string;
+  emoji: ThrowEmoji;
+  fromUserId: string;
+  fromUserName: string;
+  targetUserId: string;
+  targetUserName: string;
+  sentAt: number;
+};
+
+type ServerStatePayload = {
+  type: "state";
+  revealed: boolean;
+  users: Array<{
+    id: string;
+    name: string;
+    vote: VoteValue | null;
+    hasVoted: boolean;
+  }>;
+};
+
+type ServerPayload = ServerErrorPayload | ServerThrowPayload | ServerStatePayload;
+
+type Env = {
+  ROOMS: DurableObjectNamespace<PlanningRoom>;
+};
+
+const ALLOWED_VOTES = new Set<VoteValue>(["0", "1/2", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89"]);
+const ALLOWED_THROW_EMOJIS = new Set<ThrowEmoji>([
+  "🔥",
+  "💥",
+  "🫡",
+  "😂",
+  "🚀",
+  "🍅",
+  "🧠",
+  "👀",
+  "🧻",
+  "🛩️",
+  "💩",
+  "🎯",
+  "⚡",
+  "🌈",
+  "⭐",
+  "🍕",
+  "🍿",
+  "🎉",
+  "🦆",
+  "🐢",
+  "🦖",
+  "🧊",
+  "🍌",
+  "🥨",
+  "🫠",
+  "🤯",
+  "🥳",
+  "👻",
+  "🧨",
+  "🎈",
+  "💫",
+  "🪩",
+  "🍩",
+  "🥔",
+  "🧷",
+  "🧲",
+]);
 
 export default {
   async fetch(request, env) {
@@ -26,19 +175,16 @@ export default {
     const room = env.ROOMS.get(roomObjectId);
     return room.fetch(request);
   },
-};
+} satisfies ExportedHandler<Env>;
 
-export class PlanningRoom {
-  constructor(state) {
-    this.state = state;
-    this.clients = new Map();
-    this.room = {
-      revealed: false,
-      users: new Map(),
-    };
-  }
+export class PlanningRoom extends DurableObject<Env> {
+  private clients = new Map<string, ClientRecord>();
+  private room: PlanningRoomState = {
+    revealed: false,
+    users: new Map(),
+  };
 
-  async fetch(request) {
+  async fetch(request: Request): Promise<Response> {
     const upgradeHeader = request.headers.get("Upgrade");
     if (upgradeHeader !== "websocket") {
       return jsonError("Expected websocket upgrade.", 426);
@@ -55,7 +201,6 @@ export class PlanningRoom {
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
-    server.accept();
 
     this.attachClient(server, {
       clientId,
@@ -68,14 +213,14 @@ export class PlanningRoom {
     });
   }
 
-  attachClient(socket, identity) {
+  private attachClient(socket: WebSocket, identity: { clientId: string; name: string }) {
     const existingClient = this.clients.get(identity.clientId);
     if (existingClient) {
       existingClient.socket.close(1012, "Reconnected");
     }
 
     const previous = this.room.users.get(identity.clientId);
-    const nextUser = {
+    const nextUser: RoomUser = {
       id: identity.clientId,
       name: identity.name,
       vote: previous?.vote ?? null,
@@ -86,27 +231,21 @@ export class PlanningRoom {
       socket,
       name: identity.name,
     });
-
-    socket.addEventListener("message", (event) => {
-      this.onMessage(identity.clientId, event);
-    });
-
-    socket.addEventListener("close", () => {
-      this.detachClient(identity.clientId, socket);
-    });
-
-    socket.addEventListener("error", () => {
-      this.detachClient(identity.clientId, socket);
-    });
+    this.ctx.acceptWebSocket(socket, [identity.clientId]);
 
     this.broadcastState();
   }
 
-  onMessage(clientId, event) {
-    let payload;
+  webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): void {
+    const clientId = this.getClientIdForSocket(ws);
+    if (!clientId) {
+      return;
+    }
+
+    let payload: ClientMessage;
 
     try {
-      payload = JSON.parse(event.data);
+      payload = JSON.parse(typeof message === "string" ? message : new TextDecoder().decode(message)) as ClientMessage;
     } catch {
       this.sendToClient(clientId, {
         type: "error",
@@ -141,7 +280,21 @@ export class PlanningRoom {
     }
   }
 
-  updateVote(clientId, vote) {
+  webSocketClose(ws: WebSocket): void {
+    const clientId = this.getClientIdForSocket(ws);
+    if (clientId) {
+      this.detachClient(clientId, ws);
+    }
+  }
+
+  webSocketError(ws: WebSocket): void {
+    const clientId = this.getClientIdForSocket(ws);
+    if (clientId) {
+      this.detachClient(clientId, ws);
+    }
+  }
+
+  private updateVote(clientId: string, vote: VoteValue) {
     if (!ALLOWED_VOTES.has(vote)) {
       this.sendToClient(clientId, {
         type: "error",
@@ -159,7 +312,7 @@ export class PlanningRoom {
     this.broadcastState();
   }
 
-  throwEmoji(fromUserId, targetUserId, emoji) {
+  private throwEmoji(fromUserId: string, targetUserId: string, emoji: ThrowEmoji) {
     if (!ALLOWED_THROW_EMOJIS.has(emoji)) {
       this.sendToClient(fromUserId, {
         type: "error",
@@ -190,7 +343,7 @@ export class PlanningRoom {
     });
   }
 
-  detachClient(clientId, socket) {
+  private detachClient(clientId: string, socket: WebSocket) {
     const current = this.clients.get(clientId);
     if (!current || current.socket !== socket) {
       return;
@@ -201,7 +354,12 @@ export class PlanningRoom {
     this.broadcastState();
   }
 
-  sendToClient(clientId, payload) {
+  private getClientIdForSocket(socket: WebSocket): string | null {
+    const [clientId] = this.ctx.getTags(socket);
+    return clientId ?? null;
+  }
+
+  private sendToClient(clientId: string, payload: ServerErrorPayload) {
     const current = this.clients.get(clientId);
     if (!current) {
       return;
@@ -212,7 +370,7 @@ export class PlanningRoom {
     } catch {}
   }
 
-  broadcastState() {
+  private broadcastState() {
     this.broadcast({
       type: "state",
       revealed: this.room.revealed,
@@ -227,7 +385,7 @@ export class PlanningRoom {
     });
   }
 
-  broadcast(payload) {
+  private broadcast(payload: ServerPayload) {
     const message = JSON.stringify(payload);
     for (const [clientId, client] of this.clients.entries()) {
       try {
@@ -240,7 +398,7 @@ export class PlanningRoom {
   }
 }
 
-function sanitizeName(value) {
+function sanitizeName(value: string | null): string {
   if (!value) {
     return "";
   }
@@ -248,7 +406,7 @@ function sanitizeName(value) {
   return value.trim().slice(0, 40);
 }
 
-function sanitizeClientId(value) {
+function sanitizeClientId(value: string | null): string {
   if (!value) {
     return "";
   }
@@ -256,12 +414,12 @@ function sanitizeClientId(value) {
   return value.trim().slice(0, 80);
 }
 
-function jsonError(message, status) {
+function jsonError(message: string, status: number): Response {
   return new Response(
     JSON.stringify({
       type: "error",
       message,
-    }),
+    } satisfies ServerErrorPayload),
     {
       status,
       headers: {
