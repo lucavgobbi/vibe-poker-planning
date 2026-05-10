@@ -4,8 +4,9 @@ dist
 
 .wrangler
 
+.env*.local
+
 .projects/cache
 .projects/vault
 .env
 .env.local
-.env*.local

@@ -21,13 +21,13 @@
       "status": "complete"
     },
     "vercel": {
-      "accountRequestId": "facctrq_61UbgKx5d42segfGA16T7aYg3jA8otz7aoHwdBFTEK12",
+      "accountRequestId": "facctrq_61UekFsfkIeEaiy3k16T7aYg3jA8otz7aoHwdBFTEAbI",
       "configuration": {},
-      "linkedAt": "2026-05-01T14:49:24.998Z",
+      "linkedAt": "2026-05-10T01:36:49.469Z",
       "providerId": "prvdr_61ULUAr4zlQgZkvXY5LsG",
       "providerName": "Vercel",
       "redirectUrl": null,
-      "requestedAt": "2026-05-01T14:49:24.998Z",
+      "requestedAt": "2026-05-10T01:36:49.469Z",
       "status": "complete"
     }
   },

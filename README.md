@@ -59,7 +59,7 @@ The frontend reads these variables at build time:
 
 ## Quality Checks
 
-Run both before deploying:
+Run both before deploying (the `pnpm deploy:frontend` script runs `build` for you, but not `typecheck`):
 
 ```bash
 pnpm typecheck
@@ -120,12 +120,13 @@ Before deploying the frontend, make sure the Vercel project has:
 - `POSTHOG_ANALYTICS_API_KEY` set if analytics should be enabled
 - `POSTHOG_ANALYTICS_HOST` set if you use a non-default PostHog host
 
-Typical Vercel deployment flow:
+Deploy from the repo root (runs a production build, then `vercel deploy --prod -y` using the local Vercel CLI):
 
 ```bash
-pnpm build
-vercel deploy --prod
+pnpm deploy:frontend
 ```
+
+Set `VERCEL_TOKEN` in your environment so the CLI can authenticate without an interactive login. If the directory is not linked to a Vercel project yet, set both `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`, or run `vercel link` once (see the [Vercel CLI](https://vercel.com/docs/cli) docs).
 
 If you are managing the Vercel project through Stripe Projects, use `stripe projects status` and `stripe projects env --pull` first so local state and provider credentials are current.
 
@@ -137,6 +138,8 @@ pnpm dev:worker
 pnpm build
 pnpm typecheck
 pnpm preview
+pnpm deploy:worker
+pnpm deploy:frontend
 stripe projects status
 stripe projects env --pull
 ```

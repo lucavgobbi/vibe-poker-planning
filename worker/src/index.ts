@@ -56,6 +56,12 @@ type PlanningRoomState = {
   users: Map<string, RoomUser>;
 };
 
+/** Persisted on each WebSocket for hibernation-safe rebuild (client id stays in socket tags). */
+type SocketAttachment = {
+  name: string;
+  vote: VoteValue | null;
+};
+
 type VoteMessage = {
   type: "vote";
   value: VoteValue;
@@ -109,6 +115,8 @@ type ServerPayload = ServerErrorPayload | ServerThrowPayload | ServerStatePayloa
 type Env = {
   ROOMS: DurableObjectNamespace<PlanningRoom>;
 };
+
+const STORAGE_KEY_REVEALED = "revealed";
 
 const ALLOWED_VOTES = new Set<VoteValue>(["0", "1/2", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89"]);
 const ALLOWED_THROW_EMOJIS = new Set<ThrowEmoji>([
@@ -198,6 +206,8 @@ export class PlanningRoom extends DurableObject<Env> {
       return jsonError("Missing or invalid name/client id.", 400);
     }
 
+    await this.hydrateRoom();
+
     const pair = new WebSocketPair();
     const client = pair[0];
     const server = pair[1];
@@ -232,11 +242,14 @@ export class PlanningRoom extends DurableObject<Env> {
       name: identity.name,
     });
     this.ctx.acceptWebSocket(socket, [identity.clientId]);
+    this.persistSocketAttachment(identity.clientId);
 
     this.broadcastState();
   }
 
-  webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): void {
+  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+    await this.hydrateRoom();
+
     const clientId = this.getClientIdForSocket(ws);
     if (!clientId) {
       return;
@@ -262,13 +275,16 @@ export class PlanningRoom extends DurableObject<Env> {
         this.throwEmoji(clientId, payload.targetUserId, payload.emoji);
         return;
       case "reveal":
-        this.room.revealed = true;
+        await this.persistRevealed(true);
         this.broadcastState();
         return;
       case "reset":
-        this.room.revealed = false;
+        await this.persistRevealed(false);
         for (const user of this.room.users.values()) {
           user.vote = null;
+        }
+        for (const id of this.room.users.keys()) {
+          this.persistSocketAttachment(id);
         }
         this.broadcastState();
         return;
@@ -280,14 +296,18 @@ export class PlanningRoom extends DurableObject<Env> {
     }
   }
 
-  webSocketClose(ws: WebSocket): void {
+  async webSocketClose(ws: WebSocket): Promise<void> {
+    await this.hydrateRoom();
+
     const clientId = this.getClientIdForSocket(ws);
     if (clientId) {
       this.detachClient(clientId, ws);
     }
   }
 
-  webSocketError(ws: WebSocket): void {
+  async webSocketError(ws: WebSocket): Promise<void> {
+    await this.hydrateRoom();
+
     const clientId = this.getClientIdForSocket(ws);
     if (clientId) {
       this.detachClient(clientId, ws);
@@ -309,6 +329,7 @@ export class PlanningRoom extends DurableObject<Env> {
     }
 
     user.vote = vote;
+    this.persistSocketAttachment(clientId);
     this.broadcastState();
   }
 
@@ -349,9 +370,16 @@ export class PlanningRoom extends DurableObject<Env> {
       return;
     }
 
+    this.removeClientRecords(clientId);
+    this.broadcastState();
+  }
+
+  /**
+   * Removes a participant without sending updates. Used when pruning dead sockets during broadcast.
+   */
+  private removeClientRecords(clientId: string) {
     this.clients.delete(clientId);
     this.room.users.delete(clientId);
-    this.broadcastState();
   }
 
   private getClientIdForSocket(socket: WebSocket): string | null {
@@ -367,7 +395,9 @@ export class PlanningRoom extends DurableObject<Env> {
 
     try {
       current.socket.send(JSON.stringify(payload));
-    } catch {}
+    } catch {
+      // Ignore transient send failures; roster sync happens on the next successful broadcastState.
+    }
   }
 
   private broadcastState() {
@@ -387,15 +417,133 @@ export class PlanningRoom extends DurableObject<Env> {
 
   private broadcast(payload: ServerPayload) {
     const message = JSON.stringify(payload);
+    const disconnected: string[] = [];
+
     for (const [clientId, client] of this.clients.entries()) {
       try {
         client.socket.send(message);
       } catch {
-        this.clients.delete(clientId);
-        this.room.users.delete(clientId);
+        disconnected.push(clientId);
+      }
+    }
+
+    if (disconnected.length === 0) {
+      return;
+    }
+
+    for (const clientId of disconnected) {
+      const record = this.clients.get(clientId);
+      if (record) {
+        this.removeClientRecords(clientId);
+      }
+    }
+
+    if (payload.type !== "state") {
+      this.broadcastState();
+      return;
+    }
+
+    // State broadcast had failures: send one fresh roster update without nesting payload-specific logic.
+    if (this.clients.size === 0) {
+      return;
+    }
+
+    const sync = JSON.stringify({
+      type: "state",
+      revealed: this.room.revealed,
+      users: Array.from(this.room.users.values())
+        .sort((left, right) => left.name.localeCompare(right.name))
+        .map((user) => ({
+          id: user.id,
+          name: user.name,
+          vote: this.room.revealed ? user.vote : null,
+          hasVoted: Boolean(user.vote),
+        })),
+    } satisfies ServerStatePayload);
+
+    for (const [clientId, client] of this.clients.entries()) {
+      try {
+        client.socket.send(sync);
+      } catch {
+        this.removeClientRecords(clientId);
       }
     }
   }
+
+  /**
+   * Rebuild in-memory maps after WebSocket hibernation (heap was cleared; sockets and attachments remain).
+   */
+  private async hydrateRoom(): Promise<void> {
+    const storedRevealed = await this.ctx.storage.get<boolean>(STORAGE_KEY_REVEALED);
+    this.room.revealed = storedRevealed ?? false;
+
+    this.clients.clear();
+    this.room.users.clear();
+
+    for (const ws of this.ctx.getWebSockets()) {
+      const clientId = this.ctx.getTags(ws)[0];
+      if (!clientId) {
+        continue;
+      }
+
+      const attachment = this.readAttachment(ws);
+      if (!attachment || !attachment.name) {
+        continue;
+      }
+
+      this.clients.set(clientId, { socket: ws, name: attachment.name });
+      this.room.users.set(clientId, {
+        id: clientId,
+        name: attachment.name,
+        vote: attachment.vote,
+      });
+    }
+  }
+
+  private readAttachment(ws: WebSocket): SocketAttachment | null {
+    const raw = ws.deserializeAttachment?.();
+    if (raw == null || typeof raw !== "string") {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as Partial<SocketAttachment>;
+      const name = typeof parsed.name === "string" ? parsed.name.trim().slice(0, 40) : "";
+      const voteRaw = parsed.vote;
+
+      let vote: VoteValue | null = null;
+      if (voteRaw !== undefined && voteRaw !== null) {
+        if (ALLOWED_VOTES.has(voteRaw as VoteValue)) {
+          vote = voteRaw as VoteValue;
+        }
+      }
+
+      return { name, vote };
+    } catch {
+      return null;
+    }
+  }
+
+  private persistSocketAttachment(clientId: string): void {
+    const client = this.clients.get(clientId);
+    const user = this.room.users.get(clientId);
+    if (!client || !user) {
+      return;
+    }
+
+    const payload: SocketAttachment = {
+      name: user.name,
+      vote: user.vote,
+    };
+
+    client.socket.serializeAttachment(JSON.stringify(payload));
+  }
+
+  private async persistRevealed(revealed: boolean): Promise<void> {
+    this.room.revealed = revealed;
+    await this.ctx.storage.put(STORAGE_KEY_REVEALED, revealed);
+  }
+
 }
 
 function sanitizeName(value: string | null): string {
