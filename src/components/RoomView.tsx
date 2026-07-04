@@ -177,7 +177,7 @@ export default function RoomView() {
                         {user.hasVoted ? "✓" : "•"}
                       </span>
                       <span className="participant-card-face participant-card-back">
-                        {user.vote || "—"}
+                        {revealed ? user.vote || "—" : ""}
                       </span>
                     </div>
                   </div>

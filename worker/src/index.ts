@@ -364,13 +364,18 @@ export class PlanningRoom extends DurableObject<Env> {
     });
   }
 
-  private detachClient(clientId: string, socket: WebSocket) {
+  private async detachClient(clientId: string, socket: WebSocket) {
     const current = this.clients.get(clientId);
     if (!current || current.socket !== socket) {
       return;
     }
 
     this.removeClientRecords(clientId);
+
+    if (this.clients.size === 0) {
+      await this.persistRevealed(false);
+    }
+
     this.broadcastState();
   }
 
@@ -438,6 +443,10 @@ export class PlanningRoom extends DurableObject<Env> {
       }
     }
 
+    if (this.clients.size === 0) {
+      void this.persistRevealed(false);
+    }
+
     if (payload.type !== "state") {
       this.broadcastState();
       return;
@@ -467,6 +476,10 @@ export class PlanningRoom extends DurableObject<Env> {
       } catch {
         this.removeClientRecords(clientId);
       }
+    }
+
+    if (this.clients.size === 0) {
+      void this.persistRevealed(false);
     }
   }
 
