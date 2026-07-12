@@ -125,17 +125,6 @@ input:focus {
   letter-spacing: 0.02em;
 }
 
-.brand-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: white;
-  box-shadow: var(--shadow);
-}
-
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -148,11 +137,6 @@ input:focus {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.room-icon {
-  flex-shrink: 0;
-  opacity: 0.6;
 }
 
 .room-label {
@@ -293,7 +277,6 @@ input:focus {
 }
 
 .hero,
-.room-hero,
 .join-card {
   border-radius: 32px;
 }
@@ -307,7 +290,6 @@ input:focus {
 }
 
 .hero h1,
-.room-hero h1,
 .join-card h1 {
   margin: 0;
   font-size: clamp(2.1rem, 4vw, 4.2rem);
@@ -315,10 +297,8 @@ input:focus {
 }
 
 .hero p,
-.room-hero p,
 .join-card p,
 .feature-card p,
-.metric-card p,
 .participant-row p,
 .empty-state {
   color: var(--muted);
@@ -434,7 +414,6 @@ input:focus {
 }
 
 .panel-header,
-.hero-meta,
 .join-actions {
   display: flex;
   gap: 0.75rem;
@@ -449,13 +428,6 @@ input:focus {
 
 .panel-header h2 {
   margin: 0;
-}
-
-.room-hero {
-  padding: 1.6rem;
-  display: grid;
-  gap: 1rem;
-  position: relative;
 }
 
 .room-error,
@@ -855,18 +827,6 @@ input:focus {
 }
 
 @media (max-width: 720px) {
-  .site-footer {
-    padding-top: 1.25rem;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .footer-copy {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 720px) {
   .app-shell {
     padding: 0;
   }
@@ -979,6 +939,12 @@ input:focus {
 
   .site-footer {
     padding: 1rem 1rem 0.25rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footer-copy {
+    justify-content: flex-start;
   }
 
   .panel-note {
