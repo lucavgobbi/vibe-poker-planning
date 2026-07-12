@@ -6,6 +6,8 @@ dist
 
 .env*.local
 
+.env*
+
 .projects/cache
 .projects/vault
 .projects/state.test.json
@@ -13,4 +15,3 @@ dist
 .env
 .env.*
 !.env.example
-.env*

@@ -1,16 +1,27 @@
 import { useState, type CSSProperties } from "react";
-import { VOTE_OPTIONS } from "../lib/constants";
-import { createSlug } from "../lib/room";
+import { DECKS, DEFAULT_DECK } from "../lib/constants";
+import { createSlug, setStoredDeck } from "../lib/room";
+import type { DeckType } from "../lib/types";
+
+const DECK_ENTRIES = Object.entries(DECKS) as [
+  DeckType,
+  (typeof DECKS)[DeckType],
+][];
 
 export default function LandingPage() {
   const [customRoom, setCustomRoom] = useState("");
+  const [selectedDeck, setSelectedDeck] = useState<DeckType>(DEFAULT_DECK);
 
   const goToRoom = (roomId: string) => {
-    const nextRoom = roomId.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    const nextRoom = roomId
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-");
     if (!nextRoom) {
       return;
     }
 
+    setStoredDeck(selectedDeck);
     window.location.assign(`/${nextRoom}`);
   };
 
@@ -18,12 +29,27 @@ export default function LandingPage() {
     <div className="landing-page">
       <section className="hero glass-card">
         <div className="hero-copy">
-          <span className="eyebrow">Realtime vibe planning poker</span>
+          <span className="eyebrow">Realtime vibe-coded planning poker</span>
           <h1>Fast room links, instant votes, no account ceremony.</h1>
           <p>
-            Share a URL, have everyone join with a name, vote on Fibonacci cards,
-            then reveal together. Same path, same room.
+            Share a URL, have everyone join with a name, vote on cards, then
+            reveal together. Same path, same room.
           </p>
+          <div className="deck-selector">
+            <span className="deck-selector-label">Deck</span>
+            <div className="deck-options">
+              {DECK_ENTRIES.map(([key, deck]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`deck-option ${selectedDeck === key ? "active" : ""}`}
+                  onClick={() => setSelectedDeck(key)}
+                >
+                  {deck.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="hero-actions">
             <button
               className="primary-button"
@@ -54,7 +80,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="hero-stage">
-          {VOTE_OPTIONS.slice(0, 6).map((vote, index) => (
+          {DECKS[selectedDeck].values.slice(0, 6).map((vote, index) => (
             <div
               key={vote}
               className="floating-card"
@@ -70,7 +96,10 @@ export default function LandingPage() {
       <section className="feature-grid">
         <article className="glass-card feature-card">
           <h2>Room URLs</h2>
-          <p>Use any path as a room. Hand the link around and everyone lands together.</p>
+          <p>
+            Use any path as a room. Hand the link around and everyone lands
+            together.
+          </p>
         </article>
         <article className="glass-card feature-card">
           <h2>Reveal together</h2>
@@ -78,7 +107,10 @@ export default function LandingPage() {
         </article>
         <article className="glass-card feature-card">
           <h2>Dark mode ready</h2>
-          <p>Built with a full light and dark palette instead of a single swapped background.</p>
+          <p>
+            Built with a full light and dark palette instead of a single swapped
+            background.
+          </p>
         </article>
       </section>
     </div>

@@ -1,6 +1,11 @@
-import type { THROW_EMOJIS, VOTE_OPTIONS } from "./constants";
+import type { THROW_EMOJIS } from "./constants";
 
-export type VoteValue = (typeof VOTE_OPTIONS)[number];
+export type DeckType = "fibonacci" | "base2" | "regular";
+
+export type VoteValue =
+  | "0" | "1/2" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+  | "10" | "11" | "12" | "13" | "16" | "21" | "32" | "34" | "55" | "64" | "89" | "128";
+
 export type ThrowEmoji = (typeof THROW_EMOJIS)[number];
 export type Theme = "light" | "dark";
 export type ConnectionState = "idle" | "connecting" | "connected" | "reconnecting" | "error";
@@ -14,6 +19,7 @@ export type RoomUser = {
 
 export type RoomState = {
   revealed: boolean;
+  deck: DeckType;
   users: RoomUser[];
 };
 

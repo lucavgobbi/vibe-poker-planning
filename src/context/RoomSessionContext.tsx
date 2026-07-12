@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { capturePostHog } from "../lib/posthog";
-import { getStoredClientId, toVoteNumber } from "../lib/room";
+import { getStoredClientId, getStoredDeck, toVoteNumber } from "../lib/room";
 import type {
   ConnectionState,
   RoomState,
@@ -41,6 +41,7 @@ const RoomSessionContext = createContext<RoomSessionContextValue | null>(null);
 export function RoomSessionProvider({ children }: { children: ReactNode }) {
   const { roomId, joinedName } = useAppShellContext();
   const clientId = useMemo(getStoredClientId, []);
+  const [deck] = useState(getStoredDeck);
   const joinedRoomKeyRef = useRef("");
   const [selectedVote, setSelectedVote] = useState<VoteValue | null>(null);
   const enabled = Boolean(roomId && joinedName);
@@ -50,6 +51,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
     joinedName,
     enabled,
     clientId,
+    deck,
   });
 
   useEffect(() => {

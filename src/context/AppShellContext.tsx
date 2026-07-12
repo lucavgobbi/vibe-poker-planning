@@ -23,6 +23,7 @@ type AppShellContextValue = {
   leaveRoom: () => void;
   returnHome: () => void;
   toggleTheme: () => void;
+  copyRoomLink: () => Promise<void>;
 };
 
 const AppShellContext = createContext<AppShellContextValue | null>(null);
@@ -63,6 +64,8 @@ export function AppShellProvider({ children }: { children: ReactNode }) {
 
   const screen: Screen = !roomId ? "landing" : !joinedName ? "join" : "room";
 
+  const shareUrl = roomId ? `${window.location.origin}/${roomId}` : window.location.origin;
+
   const value = useMemo<AppShellContextValue>(
     () => ({
       screen,
@@ -83,8 +86,15 @@ export function AppShellProvider({ children }: { children: ReactNode }) {
       toggleTheme: () => {
         setTheme((current) => (current === "dark" ? "light" : "dark"));
       },
+      copyRoomLink: async () => {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+        } catch {
+          window.prompt("Copy room URL", shareUrl);
+        }
+      },
     }),
-    [screen, roomId, joinedName, initialName, theme],
+    [screen, roomId, joinedName, initialName, theme, shareUrl],
   );
 
   return <AppShellContext.Provider value={value}>{children}</AppShellContext.Provider>;

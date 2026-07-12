@@ -1,9 +1,9 @@
 import type { MutableRefObject, RefObject } from "react";
-import { CLIENT_ID_KEY, THEME_KEY } from "./constants";
-import type { CelebrationBurst, Theme, ThrowEvent, ThrowVisual, VoteValue } from "./types";
+import { CLIENT_ID_KEY, DECK_KEY, DEFAULT_DECK, THEME_KEY } from "./constants";
+import type { CelebrationBurst, DeckType, Theme, ThrowEvent, ThrowVisual, VoteValue } from "./types";
 
 export function createSlug(): string {
-  return `room-${Math.random().toString(36).slice(2, 8)}`;
+  return Math.random().toString(36).slice(2, 8);
 }
 
 export function getRoomIdFromPath(): string {
@@ -43,7 +43,17 @@ export function inferSocketBaseUrl(): string {
   return "";
 }
 
-export function getSocketUrl(roomId: string, name: string, clientId: string) {
+export function getStoredDeck(): DeckType {
+  const stored = window.localStorage.getItem(DECK_KEY);
+  if (stored === "fibonacci" || stored === "base2" || stored === "regular") return stored;
+  return DEFAULT_DECK;
+}
+
+export function setStoredDeck(deck: DeckType): void {
+  window.localStorage.setItem(DECK_KEY, deck);
+}
+
+export function getSocketUrl(roomId: string, name: string, clientId: string, deck: DeckType) {
   const baseUrl = inferSocketBaseUrl();
   if (!baseUrl) {
     return "";
@@ -53,6 +63,7 @@ export function getSocketUrl(roomId: string, name: string, clientId: string) {
   const params = new URLSearchParams({
     name,
     clientId,
+    deck,
   });
 
   return `${normalized}/connect/${encodeURIComponent(roomId)}?${params.toString()}`;

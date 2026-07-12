@@ -144,6 +144,88 @@ input:focus {
   justify-content: flex-end;
 }
 
+.room-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.room-icon {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.room-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+}
+
+.room-id {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.room-bar-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.icon-button:hover {
+  background: var(--surface-border);
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  right: 0;
+  min-width: 180px;
+  background: var(--surface-strong);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 0.35rem;
+  z-index: 50;
+}
+
+.menu-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.menu-dropdown button:hover {
+  background: var(--surface-border);
+}
+
 .glass-card {
   background: var(--surface);
   backdrop-filter: blur(18px);
@@ -245,6 +327,49 @@ input:focus {
 .hero-copy p {
   max-width: 42rem;
   font-size: 1.05rem;
+}
+
+.deck-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.deck-selector-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.deck-options {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.deck-option {
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.deck-option:hover {
+  background: var(--surface-strong);
+  border-color: var(--primary);
+}
+
+.deck-option.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
 }
 
 .hero-actions {
@@ -454,7 +579,7 @@ input:focus {
 
 .emoji-tooltip {
   position: absolute;
-  left: calc(100% - 0.75rem);
+  right: calc(100% + 0.75rem);
   top: 50%;
   z-index: 10;
   min-width: 240px;
@@ -753,6 +878,17 @@ input:focus {
   .inline-form {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .room-bar-actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .room-id {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .hero,

@@ -1,17 +1,14 @@
 import type { CSSProperties } from "react";
-import { useAppShellContext } from "../context/AppShellContext";
 import { useRoomSessionContext } from "../context/RoomSessionContext";
 import { useRoomPresentation } from "../hooks/useRoomPresentation";
-import { THROW_EMOJIS, VOTE_OPTIONS } from "../lib/constants";
+import { DECKS, DEFAULT_DECK, THROW_EMOJIS } from "../lib/constants";
 
 export default function RoomView() {
-  const { roomId, leaveRoom } = useAppShellContext();
   const {
     errorMessage,
     currentVote,
     unanimousVote,
     averageScore,
-    copyRoomLink,
     revealVotes,
     resetVotes,
     vote,
@@ -21,6 +18,8 @@ export default function RoomView() {
     revealed,
     userLabelFor,
   } = useRoomSessionContext();
+
+  const voteOptions = DECKS[roomState.deck ?? DEFAULT_DECK].values;
   const { celebrationBursts, participantPanelRef, activeThrows, setParticipantNameRef } =
     useRoomPresentation({
       throwEvents,
@@ -49,27 +48,9 @@ export default function RoomView() {
         </div>
       ) : null}
       <main className="room-layout">
-        <section className="room-hero glass-card">
-          <div>
-            <span className="eyebrow">{roomId}</span>
-            <h1>Vibe Planning Poker</h1>
-            <p>
-              Share the link, have everyone vote, then reveal when the table is ready.
-            </p>
-          </div>
-          <div className="hero-meta">
-            <button className="secondary-button" type="button" onClick={copyRoomLink}>
-              Copy room URL
-            </button>
-            <button className="ghost-button" type="button" onClick={leaveRoom}>
-              Change name
-            </button>
-          </div>
-          {errorMessage ? (
-            <p className="room-error">Connection issue: {errorMessage}</p>
-          ) : null}
-        </section>
-
+        {errorMessage ? (
+          <p className="room-error">Connection issue: {errorMessage}</p>
+        ) : null}
         <section className="main-grid">
           <div className="glass-card panel">
             <div className="panel-header">
@@ -87,7 +68,7 @@ export default function RoomView() {
               </div>
             </div>
             <div className="vote-grid">
-              {VOTE_OPTIONS.map((value) => (
+              {voteOptions.map((value) => (
                 <button
                   key={value}
                   type="button"

@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { getSocketUrl } from "../lib/room";
-import type { ClientMessage, ConnectionState, RoomState, ThrowEvent } from "../lib/types";
+import type { ClientMessage, ConnectionState, DeckType, RoomState, ThrowEvent } from "../lib/types";
 
 type UseRoomSocketArgs = {
   roomId: string;
   joinedName: string;
   enabled: boolean;
   clientId: string;
+  deck: DeckType;
 };
 
 type ServerStatePayload = {
   type: "state";
   revealed: boolean;
+  deck: DeckType;
   users: RoomState["users"];
 };
 
@@ -22,10 +24,11 @@ type ServerErrorPayload = {
 
 type ServerPayload = ServerStatePayload | ServerErrorPayload | ThrowEvent;
 
-export function useRoomSocket({ roomId, joinedName, enabled, clientId }: UseRoomSocketArgs) {
+export function useRoomSocket({ roomId, joinedName, enabled, clientId, deck }: UseRoomSocketArgs) {
   const [connectionState, setConnectionState] = useState<ConnectionState>("idle");
   const [roomState, setRoomState] = useState<RoomState>({
     revealed: false,
+    deck,
     users: [],
   });
   const [throwEvents, setThrowEvents] = useState<ThrowEvent[]>([]);
@@ -40,13 +43,14 @@ export function useRoomSocket({ roomId, joinedName, enabled, clientId }: UseRoom
       setErrorMessage("");
       setRoomState({
         revealed: false,
+        deck,
         users: [],
       });
       setThrowEvents([]);
       return undefined;
     }
 
-    const socketUrl = getSocketUrl(roomId, joinedName, clientId);
+    const socketUrl = getSocketUrl(roomId, joinedName, clientId, deck);
     if (!socketUrl) {
       setConnectionState("error");
       setErrorMessage("Realtime backend is not configured. Set VITE_WS_BASE_URL before deploying the frontend.");
@@ -71,6 +75,7 @@ export function useRoomSocket({ roomId, joinedName, enabled, clientId }: UseRoom
           if (payload.type === "state") {
             setRoomState({
               revealed: Boolean(payload.revealed),
+              deck: payload.deck,
               users: Array.isArray(payload.users) ? payload.users : [],
             });
           }
@@ -110,7 +115,7 @@ export function useRoomSocket({ roomId, joinedName, enabled, clientId }: UseRoom
         socketRef.current.close(1000, "Leaving room");
       }
     };
-  }, [clientId, enabled, joinedName, roomId]);
+  }, [clientId, deck, enabled, joinedName, roomId]);
 
   useEffect(() => {
     if (throwEvents.length === 0) {

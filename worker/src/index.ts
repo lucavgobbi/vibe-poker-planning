@@ -1,6 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
 
-type VoteValue = "0" | "1/2" | "1" | "2" | "3" | "5" | "8" | "13" | "21" | "34" | "55" | "89";
+type DeckType = "fibonacci" | "base2" | "regular";
+
+type VoteValue =
+  | "0" | "1/2" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+  | "10" | "11" | "12" | "13" | "16" | "21" | "32" | "34" | "55" | "64" | "89" | "128";
 
 type ThrowEmoji =
   | "🔥"
@@ -53,6 +57,7 @@ type ClientRecord = {
 
 type PlanningRoomState = {
   revealed: boolean;
+  deck: DeckType | null;
   users: Map<string, RoomUser>;
 };
 
@@ -102,6 +107,7 @@ type ServerThrowPayload = {
 type ServerStatePayload = {
   type: "state";
   revealed: boolean;
+  deck: DeckType;
   users: Array<{
     id: string;
     name: string;
@@ -117,8 +123,17 @@ type Env = {
 };
 
 const STORAGE_KEY_REVEALED = "revealed";
+const STORAGE_KEY_DECK = "deck";
 
-const ALLOWED_VOTES = new Set<VoteValue>(["0", "1/2", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89"]);
+const DEFAULT_DECK: DeckType = "fibonacci";
+
+const DECK_VALUES: Record<DeckType, readonly string[]> = {
+  fibonacci: ["0", "1/2", "1", "2", "3", "5", "8", "13", "21", "34", "55", "89"],
+  base2: ["0", "1", "2", "4", "8", "16", "32", "64", "128"],
+  regular: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+};
+
+const ALLOWED_VOTES = new Set(Object.values(DECK_VALUES).flat());
 const ALLOWED_THROW_EMOJIS = new Set<ThrowEmoji>([
   "🔥",
   "💥",
@@ -189,6 +204,7 @@ export class PlanningRoom extends DurableObject<Env> {
   private clients = new Map<string, ClientRecord>();
   private room: PlanningRoomState = {
     revealed: false,
+    deck: null,
     users: new Map(),
   };
 
@@ -207,6 +223,11 @@ export class PlanningRoom extends DurableObject<Env> {
     }
 
     await this.hydrateRoom();
+
+    if (!this.room.deck) {
+      this.room.deck = sanitizeDeck(url.searchParams.get("deck")) ?? DEFAULT_DECK;
+      await this.persistDeck(this.room.deck);
+    }
 
     const pair = new WebSocketPair();
     const client = pair[0];
@@ -315,7 +336,9 @@ export class PlanningRoom extends DurableObject<Env> {
   }
 
   private updateVote(clientId: string, vote: VoteValue) {
-    if (!ALLOWED_VOTES.has(vote)) {
+    const deck = this.room.deck ?? DEFAULT_DECK;
+    const allowedForDeck = new Set(DECK_VALUES[deck]);
+    if (!allowedForDeck.has(vote)) {
       this.sendToClient(clientId, {
         type: "error",
         message: "Unsupported vote.",
@@ -409,6 +432,7 @@ export class PlanningRoom extends DurableObject<Env> {
     this.broadcast({
       type: "state",
       revealed: this.room.revealed,
+      deck: this.room.deck ?? DEFAULT_DECK,
       users: Array.from(this.room.users.values())
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((user) => ({
@@ -460,6 +484,7 @@ export class PlanningRoom extends DurableObject<Env> {
     const sync = JSON.stringify({
       type: "state",
       revealed: this.room.revealed,
+      deck: this.room.deck ?? DEFAULT_DECK,
       users: Array.from(this.room.users.values())
         .sort((left, right) => left.name.localeCompare(right.name))
         .map((user) => ({
@@ -487,8 +512,12 @@ export class PlanningRoom extends DurableObject<Env> {
    * Rebuild in-memory maps after WebSocket hibernation (heap was cleared; sockets and attachments remain).
    */
   private async hydrateRoom(): Promise<void> {
-    const storedRevealed = await this.ctx.storage.get<boolean>(STORAGE_KEY_REVEALED);
+    const [storedRevealed, storedDeck] = await Promise.all([
+      this.ctx.storage.get<boolean>(STORAGE_KEY_REVEALED),
+      this.ctx.storage.get<DeckType>(STORAGE_KEY_DECK),
+    ]);
     this.room.revealed = storedRevealed ?? false;
+    this.room.deck = storedDeck ?? null;
 
     this.clients.clear();
     this.room.users.clear();
@@ -557,6 +586,10 @@ export class PlanningRoom extends DurableObject<Env> {
     await this.ctx.storage.put(STORAGE_KEY_REVEALED, revealed);
   }
 
+  private async persistDeck(deck: DeckType): Promise<void> {
+    await this.ctx.storage.put(STORAGE_KEY_DECK, deck);
+  }
+
 }
 
 function sanitizeName(value: string | null): string {
@@ -573,6 +606,18 @@ function sanitizeClientId(value: string | null): string {
   }
 
   return value.trim().slice(0, 80);
+}
+
+function sanitizeDeck(value: string | null): DeckType | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value === "fibonacci" || value === "base2" || value === "regular") {
+    return value;
+  }
+
+  return null;
 }
 
 function jsonError(message: string, status: number): Response {
