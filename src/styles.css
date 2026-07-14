@@ -715,6 +715,19 @@ input:focus {
   color: var(--muted);
 }
 
+.field-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.field-checkbox input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
 .empty-state {
   margin: 0.5rem 0 0;
 }

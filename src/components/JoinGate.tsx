@@ -1,9 +1,20 @@
 import { useState } from "react";
 import { useAppShellContext } from "../context/AppShellContext";
+import { SPECTATOR_KEY } from "../lib/constants";
 
 export default function JoinGate() {
   const { roomId, initialName, joinRoom, returnHome } = useAppShellContext();
   const [name, setName] = useState(initialName);
+  const [asSpectator, setAsSpectator] = useState(false);
+
+  const handleJoin = () => {
+    if (asSpectator) {
+      window.localStorage.setItem(SPECTATOR_KEY, "true");
+    } else {
+      window.localStorage.removeItem(SPECTATOR_KEY);
+    }
+    joinRoom(name.trim());
+  };
 
   return (
     <div className="join-shell">
@@ -24,10 +35,18 @@ export default function JoinGate() {
             onChange={(event) => setName(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && name.trim()) {
-                joinRoom(name.trim());
+                handleJoin();
               }
             }}
           />
+        </label>
+        <label className="field field-checkbox">
+          <input
+            type="checkbox"
+            checked={asSpectator}
+            onChange={(event) => setAsSpectator(event.target.checked)}
+          />
+          <span>Join as spectator</span>
         </label>
         <div className="join-actions">
           <button className="ghost-button" type="button" onClick={returnHome}>
@@ -37,9 +56,9 @@ export default function JoinGate() {
             className="primary-button"
             type="button"
             disabled={!name.trim()}
-            onClick={() => joinRoom(name.trim())}
+            onClick={handleJoin}
           >
-            Join room
+            {asSpectator ? "Watch room" : "Join room"}
           </button>
         </div>
       </div>
