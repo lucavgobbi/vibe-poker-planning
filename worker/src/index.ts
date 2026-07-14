@@ -48,6 +48,7 @@ type RoomUser = {
   id: string;
   name: string;
   vote: VoteValue | null;
+  isSpectator: boolean;
 };
 
 type ClientRecord = {
@@ -65,6 +66,7 @@ type PlanningRoomState = {
 type SocketAttachment = {
   name: string;
   vote: VoteValue | null;
+  isSpectator: boolean;
 };
 
 type VoteMessage = {
@@ -113,6 +115,7 @@ type ServerStatePayload = {
     name: string;
     vote: VoteValue | null;
     hasVoted: boolean;
+    isSpectator: boolean;
   }>;
 };
 
@@ -217,6 +220,7 @@ export class PlanningRoom extends DurableObject<Env> {
     const url = new URL(request.url);
     const name = sanitizeName(url.searchParams.get("name"));
     const clientId = sanitizeClientId(url.searchParams.get("clientId"));
+    const spectator = url.searchParams.get("spectator") === "true";
 
     if (!name || !clientId) {
       return jsonError("Missing or invalid name/client id.", 400);
@@ -236,6 +240,7 @@ export class PlanningRoom extends DurableObject<Env> {
     this.attachClient(server, {
       clientId,
       name,
+      spectator,
     });
 
     return new Response(null, {
@@ -244,7 +249,10 @@ export class PlanningRoom extends DurableObject<Env> {
     });
   }
 
-  private attachClient(socket: WebSocket, identity: { clientId: string; name: string }) {
+  private attachClient(
+    socket: WebSocket,
+    identity: { clientId: string; name: string; spectator: boolean },
+  ) {
     const existingClient = this.clients.get(identity.clientId);
     if (existingClient) {
       existingClient.socket.close(1012, "Reconnected");
@@ -255,6 +263,7 @@ export class PlanningRoom extends DurableObject<Env> {
       id: identity.clientId,
       name: identity.name,
       vote: previous?.vote ?? null,
+      isSpectator: identity.spectator,
     };
 
     this.room.users.set(identity.clientId, nextUser);
@@ -336,6 +345,19 @@ export class PlanningRoom extends DurableObject<Env> {
   }
 
   private updateVote(clientId: string, vote: VoteValue) {
+    const user = this.room.users.get(clientId);
+    if (!user) {
+      return;
+    }
+
+    if (user.isSpectator) {
+      this.sendToClient(clientId, {
+        type: "error",
+        message: "Spectators cannot vote.",
+      });
+      return;
+    }
+
     const deck = this.room.deck ?? DEFAULT_DECK;
     const allowedForDeck = new Set(DECK_VALUES[deck]);
     if (!allowedForDeck.has(vote)) {
@@ -343,11 +365,6 @@ export class PlanningRoom extends DurableObject<Env> {
         type: "error",
         message: "Unsupported vote.",
       });
-      return;
-    }
-
-    const user = this.room.users.get(clientId);
-    if (!user) {
       return;
     }
 
@@ -440,6 +457,7 @@ export class PlanningRoom extends DurableObject<Env> {
           name: user.name,
           vote: this.room.revealed ? user.vote : null,
           hasVoted: Boolean(user.vote),
+          isSpectator: user.isSpectator,
         })),
     });
   }
@@ -490,8 +508,9 @@ export class PlanningRoom extends DurableObject<Env> {
         .map((user) => ({
           id: user.id,
           name: user.name,
-          vote: this.room.revealed ? user.vote : null,
+           vote: this.room.revealed ? user.vote : null,
           hasVoted: Boolean(user.vote),
+          isSpectator: user.isSpectator,
         })),
     } satisfies ServerStatePayload);
 
@@ -538,6 +557,7 @@ export class PlanningRoom extends DurableObject<Env> {
         id: clientId,
         name: attachment.name,
         vote: attachment.vote,
+        isSpectator: attachment.isSpectator,
       });
     }
   }
@@ -552,6 +572,7 @@ export class PlanningRoom extends DurableObject<Env> {
       const parsed = JSON.parse(raw) as Partial<SocketAttachment>;
       const name = typeof parsed.name === "string" ? parsed.name.trim().slice(0, 40) : "";
       const voteRaw = parsed.vote;
+      const isSpectator = parsed.isSpectator === true;
 
       let vote: VoteValue | null = null;
       if (voteRaw !== undefined && voteRaw !== null) {
@@ -560,7 +581,7 @@ export class PlanningRoom extends DurableObject<Env> {
         }
       }
 
-      return { name, vote };
+      return { name, vote, isSpectator };
     } catch {
       return null;
     }
@@ -576,6 +597,7 @@ export class PlanningRoom extends DurableObject<Env> {
     const payload: SocketAttachment = {
       name: user.name,
       vote: user.vote,
+      isSpectator: user.isSpectator,
     };
 
     client.socket.serializeAttachment(JSON.stringify(payload));
