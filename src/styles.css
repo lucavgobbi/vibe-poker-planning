@@ -754,6 +754,18 @@ input:focus {
   max-width: 20rem;
 }
 
+.participant-card-spectator {
+  opacity: 0.6;
+}
+
+.participant-card-spectator .participant-card-inner {
+  transform: none;
+}
+
+.spectator-card-face {
+  font-size: 1.6rem;
+}
+
 .empty-state {
   margin: 0.5rem 0 0;
 }

@@ -99,11 +99,12 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
     }
   }, [currentVote, enabled, roomState.revealed, roomState.users]);
   const unanimousVote = useMemo(() => {
-    if (!revealed || roomState.users.length === 0) {
+    const voters = roomState.users.filter((user) => !user.isSpectator);
+    if (!revealed || voters.length === 0) {
       return "";
     }
 
-    const votes = roomState.users.map((user) => user.vote);
+    const votes = voters.map((user) => user.vote);
     if (votes.some((vote) => !vote)) {
       return "";
     }

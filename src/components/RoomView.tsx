@@ -108,7 +108,7 @@ export default function RoomView() {
                   <p className="panel-note">
                     Average: <strong>{averageScore}</strong>
                   </p>
-                ) : (
+                ) : isSpectator ? null : (
                   <p className="panel-note">
                     {currentVote ? `Your card: ${currentVote}` : "Pick a card to vote."}
                   </p>
@@ -168,16 +168,26 @@ export default function RoomView() {
                       </div>
                     </div>
                   </div>
-                  <div className={`participant-card ${user.hasVoted ? "voted" : ""}`}>
-                    <div className={`participant-card-inner ${revealed ? "revealed" : ""}`}>
-                      <span className="participant-card-face participant-card-front">
-                        {user.hasVoted ? "✓" : "•"}
-                      </span>
-                      <span className="participant-card-face participant-card-back">
-                        {revealed ? user.vote || "—" : ""}
-                      </span>
+                  {user.isSpectator ? (
+                    <div className="participant-card participant-card-spectator">
+                      <div className="participant-card-inner">
+                        <span className="participant-card-face participant-card-front spectator-card-face">
+                          👁️
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className={`participant-card ${user.hasVoted ? "voted" : ""}`}>
+                      <div className={`participant-card-inner ${revealed ? "revealed" : ""}`}>
+                        <span className="participant-card-face participant-card-front">
+                          {user.hasVoted ? "✓" : "•"}
+                        </span>
+                        <span className="participant-card-face participant-card-back">
+                          {revealed ? user.vote || "—" : ""}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </article>
               ))}
               {roomState.users.length === 0 ? (

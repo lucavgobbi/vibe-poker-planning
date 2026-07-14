@@ -262,7 +262,7 @@ export class PlanningRoom extends DurableObject<Env> {
     const nextUser: RoomUser = {
       id: identity.clientId,
       name: identity.name,
-      vote: previous?.vote ?? null,
+      vote: identity.spectator ? null : (previous?.vote ?? null),
       isSpectator: identity.spectator,
     };
 
@@ -456,7 +456,7 @@ export class PlanningRoom extends DurableObject<Env> {
           id: user.id,
           name: user.name,
           vote: this.room.revealed ? user.vote : null,
-          hasVoted: Boolean(user.vote),
+          hasVoted: user.isSpectator ? false : Boolean(user.vote),
           isSpectator: user.isSpectator,
         })),
     });
@@ -509,7 +509,7 @@ export class PlanningRoom extends DurableObject<Env> {
           id: user.id,
           name: user.name,
            vote: this.room.revealed ? user.vote : null,
-          hasVoted: Boolean(user.vote),
+          hasVoted: user.isSpectator ? false : Boolean(user.vote),
           isSpectator: user.isSpectator,
         })),
     } satisfies ServerStatePayload);
