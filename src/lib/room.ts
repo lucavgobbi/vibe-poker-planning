@@ -53,7 +53,13 @@ export function setStoredDeck(deck: DeckType): void {
   window.localStorage.setItem(DECK_KEY, deck);
 }
 
-export function getSocketUrl(roomId: string, name: string, clientId: string, deck: DeckType) {
+export function getSocketUrl(
+  roomId: string,
+  name: string,
+  clientId: string,
+  deck: DeckType,
+  spectator: boolean = false,
+) {
   const baseUrl = inferSocketBaseUrl();
   if (!baseUrl) {
     return "";
@@ -65,6 +71,10 @@ export function getSocketUrl(roomId: string, name: string, clientId: string, dec
     clientId,
     deck,
   });
+
+  if (spectator) {
+    params.set("spectator", "true");
+  }
 
   return `${normalized}/connect/${encodeURIComponent(roomId)}?${params.toString()}`;
 }

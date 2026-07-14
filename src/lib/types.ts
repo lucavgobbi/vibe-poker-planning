@@ -15,6 +15,7 @@ export type RoomUser = {
   name: string;
   vote: VoteValue | null;
   hasVoted: boolean;
+  isSpectator: boolean;
 };
 
 export type RoomState = {

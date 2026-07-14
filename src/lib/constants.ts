@@ -55,6 +55,7 @@ export const THROW_EMOJIS = [
   "🧲",
 ] as const;
 
+export const SPECTATOR_KEY = "planning-poker-spectator";
 export const CLIENT_ID_KEY = "planning-poker-client-id";
 export const DISPLAY_NAME_KEY = "planning-poker-display-name";
 export const THEME_KEY = "planning-poker-theme";
