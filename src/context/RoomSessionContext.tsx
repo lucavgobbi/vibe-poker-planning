@@ -10,6 +10,7 @@ import {
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { capturePostHog } from "../lib/posthog";
 import { getStoredClientId, getStoredDeck, toVoteNumber } from "../lib/room";
+import { SPECTATOR_KEY } from "../lib/constants";
 import type {
   ConnectionState,
   RoomState,
@@ -26,6 +27,7 @@ type RoomSessionContextValue = {
   throwEvents: ThrowEvent[];
   currentVote: VoteValue | null;
   revealed: boolean;
+  isSpectator: boolean;
   unanimousVote: string;
   averageScore: string | null;
   copyRoomLink: () => Promise<void>;
@@ -33,7 +35,7 @@ type RoomSessionContextValue = {
   vote: (value: VoteValue) => void;
   revealVotes: () => void;
   resetVotes: () => void;
-  userLabelFor: (userId: string) => "You" | "Participant";
+  userLabelFor: (userId: string) => "You" | "Spectator" | "Participant";
 };
 
 const RoomSessionContext = createContext<RoomSessionContextValue | null>(null);
@@ -45,6 +47,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
   const joinedRoomKeyRef = useRef("");
   const [selectedVote, setSelectedVote] = useState<VoteValue | null>(null);
   const enabled = Boolean(roomId && joinedName);
+  const joinAsSpectator = window.localStorage.getItem(SPECTATOR_KEY) === "true";
 
   const { connectionState, errorMessage, roomState, throwEvents, sendMessage } = useRoomSocket({
     roomId,
@@ -52,6 +55,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
     enabled,
     clientId,
     deck,
+    spectator: joinAsSpectator,
   });
 
   useEffect(() => {
@@ -75,6 +79,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
 
   const currentUser = roomState.users.find((user) => user.id === clientId);
   const currentVote = currentUser?.vote ?? null;
+  const isSpectator = currentUser?.isSpectator ?? false;
   const revealed = roomState.revealed;
 
   useEffect(() => {
@@ -140,6 +145,7 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
       throwEvents,
       currentVote: selectedVote,
       revealed,
+      isSpectator,
       unanimousVote,
       averageScore,
       copyRoomLink: async () => {
@@ -191,13 +197,15 @@ export function RoomSessionProvider({ children }: { children: ReactNode }) {
           wasRevealed: revealed,
         });
       },
-      userLabelFor: (userId: string) => (userId === clientId ? "You" : "Participant"),
+      userLabelFor: (userId: string) =>
+        userId === clientId ? (isSpectator ? "Spectator" : "You") : "Participant",
     }),
     [
       averageScore,
       clientId,
       connectionState,
       errorMessage,
+      isSpectator,
       joinedName,
       revealed,
       roomId,

@@ -8,6 +8,7 @@ type UseRoomSocketArgs = {
   enabled: boolean;
   clientId: string;
   deck: DeckType;
+  spectator: boolean;
 };
 
 type ServerStatePayload = {
@@ -24,7 +25,7 @@ type ServerErrorPayload = {
 
 type ServerPayload = ServerStatePayload | ServerErrorPayload | ThrowEvent;
 
-export function useRoomSocket({ roomId, joinedName, enabled, clientId, deck }: UseRoomSocketArgs) {
+export function useRoomSocket({ roomId, joinedName, enabled, clientId, deck, spectator }: UseRoomSocketArgs) {
   const [connectionState, setConnectionState] = useState<ConnectionState>("idle");
   const [roomState, setRoomState] = useState<RoomState>({
     revealed: false,
@@ -50,7 +51,7 @@ export function useRoomSocket({ roomId, joinedName, enabled, clientId, deck }: U
       return undefined;
     }
 
-    const socketUrl = getSocketUrl(roomId, joinedName, clientId, deck);
+    const socketUrl = getSocketUrl(roomId, joinedName, clientId, deck, spectator);
     if (!socketUrl) {
       setConnectionState("error");
       setErrorMessage("Realtime backend is not configured. Set VITE_WS_BASE_URL before deploying the frontend.");
