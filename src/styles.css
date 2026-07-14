@@ -728,6 +728,32 @@ input:focus {
   cursor: pointer;
 }
 
+.spectator-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.spectator-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.spectator-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.spectator-content p {
+  color: var(--muted);
+  margin: 0;
+  max-width: 20rem;
+}
+
 .empty-state {
   margin: 0.5rem 0 0;
 }

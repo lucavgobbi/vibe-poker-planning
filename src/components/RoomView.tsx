@@ -16,6 +16,7 @@ export default function RoomView() {
     throwEmoji,
     throwEvents,
     revealed,
+    isSpectator,
     userLabelFor,
   } = useRoomSessionContext();
 
@@ -52,34 +53,49 @@ export default function RoomView() {
           <p className="room-error">Connection issue: {errorMessage}</p>
         ) : null}
         <section className="main-grid">
-          <div className="glass-card panel">
-            <div className="panel-header">
-              <div>
-                <span className="eyebrow">Voting</span>
-                <h2>Pick a card</h2>
+          {isSpectator ? (
+            <div className="glass-card panel spectator-panel">
+              <div className="panel-header">
+                <div>
+                  <span className="eyebrow">Spectator</span>
+                  <h2>Watching</h2>
+                </div>
               </div>
-              <div className="panel-actions">
-                <button className="secondary-button" type="button" onClick={revealVotes}>
-                  Reveal
-                </button>
-                <button className="ghost-button" type="button" onClick={resetVotes}>
-                  Reset
-                </button>
+              <div className="spectator-content">
+                <span className="spectator-icon">👁️</span>
+                <p>You're watching — you can reveal or reset when ready.</p>
               </div>
             </div>
-            <div className="vote-grid">
-              {voteOptions.map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={`vote-card ${currentVote === value ? "selected" : ""}`}
-                  onClick={() => vote(value)}
-                >
-                  {value}
-                </button>
-              ))}
+          ) : (
+            <div className="glass-card panel">
+              <div className="panel-header">
+                <div>
+                  <span className="eyebrow">Voting</span>
+                  <h2>Pick a card</h2>
+                </div>
+                <div className="panel-actions">
+                  <button className="secondary-button" type="button" onClick={revealVotes}>
+                    Reveal
+                  </button>
+                  <button className="ghost-button" type="button" onClick={resetVotes}>
+                    Reset
+                  </button>
+                </div>
+              </div>
+              <div className="vote-grid">
+                {voteOptions.map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`vote-card ${currentVote === value ? "selected" : ""}`}
+                    onClick={() => vote(value)}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="glass-card panel participant-panel" ref={participantPanelRef}>
             <div className="panel-header">
