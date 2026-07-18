@@ -21,7 +21,7 @@ export default function Footer() {
         <a href="https://projects.dev" target="_blank" rel="noreferrer">
           Stripe Projects
         </a>
-        {" and "}
+        {", "}
         <a href="https://openai.com/codex" target="_blank" rel="noreferrer">
           Codex
         </a>

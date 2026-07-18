@@ -1,152 +1,105 @@
 # Vibe Poker Planning
 
-Realtime planning poker built with React, TypeScript, Vite, and a Cloudflare Durable Object backend for room state and WebSocket updates.
+Realtime planning poker — no accounts, no sign-up, just a URL.
+
+Built with React 19 + Vite and a Cloudflare Durable Object backend for realtime WebSocket state.
+
+## Features
+
+- **Room URLs** — any path is a room. Share the link, everyone lands together.
+- **Anonymous voting** — votes stay hidden until the team reveals together.
+- **Multiple decks** — Fibonacci (0–89), Base 2 (0–128), Regular (1–12).
+- **Average score** — automatically calculated after reveal (spectators excluded).
+- **Unanimous vote detection** — confetti celebration when everyone agrees.
+- **Spectator mode** — join to watch without voting.
+- **Emoji throwing** — toss emojis at other participants mid-session.
+- **Dark mode** — full light and dark palettes with toggle.
+- **Realtime** — WebSockets via Cloudflare Durable Objects.
+- **No accounts** — just pick a name and go.
 
 ## Stack
 
-- Frontend: React 19 + Vite
-- Backend: Cloudflare Workers + Durable Objects
-- Hosting: Vercel for the frontend, Cloudflare for the realtime worker
-- Project provisioning: Stripe Projects CLI
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19 + Vite + TypeScript |
+| Backend | Cloudflare Workers + Durable Objects |
+| Frontend host | Vercel |
+| Worker host | Cloudflare |
+| Analytics | PostHog (optional) |
+| Provisioning | Stripe Projects CLI |
 
 ## Prerequisites
 
 - Node.js 20+
 - `pnpm`
-- Wrangler CLI access through the project dependencies
-- Stripe CLI with the `projects` plugin if you want to use the repo's managed provider workflow
+- Stripe CLI with the `projects` plugin (for managed credentials)
 
-## Get Started
-
-1. Install dependencies:
+## Local Development
 
 ```bash
+# Install dependencies
 pnpm install
-```
 
-2. If you are using Stripe Projects-managed credentials, inspect the current project and pull local env files:
-
-```bash
-stripe projects status
+# Pull provider credentials (first time / when stale)
 stripe projects env --pull
-```
 
-3. Start the Cloudflare worker locally:
-
-```bash
+# Terminal 1 — start the worker
 pnpm dev:worker
-```
 
-4. In a second terminal, start the frontend:
-
-```bash
+# Terminal 2 — start the frontend
 pnpm dev
 ```
 
-5. Open the Vite URL shown in the terminal.
-
-Local development works without setting `VITE_WS_BASE_URL` as long as the frontend runs on `localhost` or `127.0.0.1`. In that case the app defaults to `ws://127.0.0.1:8787`.
-
-## Environment Variables
-
-The frontend reads these variables at build time:
-
-- `VITE_WS_BASE_URL`: Required for deployed frontend builds. This should point at the Cloudflare Worker WebSocket base URL, for example `wss://your-worker.your-subdomain.workers.dev`.
-- `POSTHOG_ANALYTICS_API_KEY`: Optional. Enables PostHog analytics.
-- `POSTHOG_ANALYTICS_HOST`: Optional. Override the PostHog API host if needed.
-- `VITE_POSTHOG_KEY`: Optional legacy fallback for PostHog analytics.
-- `VITE_POSTHOG_HOST`: Optional legacy fallback for the PostHog API host.
-
-## Quality Checks
-
-Run both before deploying (the `pnpm deploy:frontend` script runs `build` for you, but not `typecheck`):
-
-```bash
-pnpm typecheck
-pnpm build
-```
+The frontend auto-connects to `ws://127.0.0.1:8787` when running on localhost.
 
 ## Deploy
 
-This project deploys in two parts:
-
-1. Deploy the Cloudflare Worker backend.
-2. Deploy the Vercel frontend with `VITE_WS_BASE_URL` pointing at that worker.
-
-### Stripe Projects Setup
-
-This repository is already initialized for Stripe Projects. To inspect linked providers and managed services:
-
-```bash
-stripe projects status
-```
-
-This project is expected to use these providers:
-
-- Cloudflare
-- Vercel
-
-If credentials are missing or stale, use:
-
-```bash
-stripe projects env --pull
-```
-
-Do not hand-edit `.projects` or generated `.env` files.
-
-### Deploy The Worker
-
-Deploy the backend with Wrangler:
+### 1. Deploy the Worker
 
 ```bash
 pnpm deploy:worker
 ```
 
-After deploy, note the worker URL. That URL becomes the value for `VITE_WS_BASE_URL` in the frontend deployment.
+Note the deployed URL (e.g. `https://vibe-poker-planning.your-subdomain.workers.dev`).
 
-For local testing against the deployed backend, you can also run the frontend with:
+### 2. Deploy the Frontend
 
-```bash
-VITE_WS_BASE_URL=wss://your-worker.your-subdomain.workers.dev pnpm dev
-```
+Set the worker URL and any optional env vars in the Vercel project:
 
-### Deploy The Frontend
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_WS_BASE_URL` | Yes | `wss://your-worker.your-subdomain.workers.dev` |
+| `POSTHOG_ANALYTICS_API_KEY` | No | PostHog project API key |
+| `POSTHOG_ANALYTICS_HOST` | No | PostHog API host (defaults to US region) |
 
-Builds are configured for Vercel through `vercel.json`.
-
-Before deploying the frontend, make sure the Vercel project has:
-
-- `VITE_WS_BASE_URL` set to the deployed worker URL
-- `POSTHOG_ANALYTICS_API_KEY` set if analytics should be enabled
-- `POSTHOG_ANALYTICS_HOST` set if you use a non-default PostHog host
-
-Deploy from the repo root (runs a production build, then `vercel deploy --prod -y` using the local Vercel CLI):
+Then deploy:
 
 ```bash
 pnpm deploy:frontend
 ```
 
-Set `VERCEL_TOKEN` in your environment so the CLI can authenticate without an interactive login. If the directory is not linked to a Vercel project yet, set both `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`, or run `vercel link` once (see the [Vercel CLI](https://vercel.com/docs/cli) docs).
+This runs a production build and deploys to Vercel with `vercel deploy --prod -y`. Make sure `VERCEL_TOKEN` is available in the environment.
 
-If you are managing the Vercel project through Stripe Projects, use `stripe projects status` and `stripe projects env --pull` first so local state and provider credentials are current.
+### Stripe Projects
 
-## Useful Commands
+This repo uses Stripe Projects for provider credential management. To refresh credentials:
 
 ```bash
-pnpm dev
-pnpm dev:worker
-pnpm build
+stripe projects status
+stripe projects env --pull
+```
+
+Do not hand-edit `.projects` or `.env` files.
+
+## Quality Checks
+
+```bash
 pnpm typecheck
-pnpm preview
-pnpm deploy:worker
-pnpm deploy:frontend
-stripe projects status
-stripe projects env --pull
+pnpm build
 ```
 
 ## Troubleshooting
 
-- If the app shows a realtime backend configuration error, set `VITE_WS_BASE_URL` for that environment.
-- If Vercel loads but rooms do not connect, verify the frontend is using the correct `wss://` worker URL.
-- If PostHog shows no events, verify `POSTHOG_ANALYTICS_API_KEY` is present in the frontend build environment. If your PostHog project is not in the US region, also set `POSTHOG_ANALYTICS_HOST` explicitly, for example `https://eu.i.posthog.com`.
-- If provider auth has expired, re-run `stripe projects status` and use `stripe projects link <provider>` if needed.
+- **Frontend loads but rooms don't connect** — verify `VITE_WS_BASE_URL` points at the deployed worker with `wss://`.
+- **PostHog shows no events** — check `POSTHOG_ANALYTICS_API_KEY` is set. If using EU region, set `POSTHOG_ANALYTICS_HOST` to `https://eu.i.posthog.com`.
+- **Provider auth expired** — run `stripe projects status && stripe projects env --pull`.
