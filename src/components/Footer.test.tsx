@@ -4,7 +4,10 @@ import Footer from "./Footer";
 it("renders GitHub link", () => {
   render(<Footer />);
   const link = screen.getByRole("link", { name: "Luca Gobbi on GitHub" });
-  expect(link).toHaveAttribute("href", "https://github.com/lucavgobbi");
+  expect(link).toHaveAttribute(
+    "href",
+    "https://github.com/lucavgobbi/vibe-poker-planning",
+  );
   expect(link).toHaveAttribute("target", "_blank");
 });
 

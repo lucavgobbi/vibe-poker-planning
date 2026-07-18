@@ -3,7 +3,7 @@ export default function Footer() {
     <footer className="site-footer">
       <a
         className="footer-link"
-        href="https://github.com/lucavgobbi"
+        href="https://github.com/lucavgobbi/vibe-poker-planning"
         target="_blank"
         rel="noreferrer"
         aria-label="Luca Gobbi on GitHub"
@@ -25,8 +25,11 @@ export default function Footer() {
         <a href="https://openai.com/codex" target="_blank" rel="noreferrer">
           Codex
         </a>
+        {" and "}
+        <a href="https://opencode.ai" target="_blank" rel="noreferrer">
+          Opencode
+        </a>
       </p>
     </footer>
   );
 }
-
